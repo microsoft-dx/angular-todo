@@ -1,34 +1,33 @@
-function TodoController ($scope) {
-	$scope.appTitle = "Katie's Awesome ToDo App";
-	$scope.appHeadline = "This one will save to local storage!";
-	$scope.saved = localStorage.getItem('todos');
-	$scope.todos = (localStorage.getItem('todos')!==null) ? JSON.parse($scope.saved) : [ {text: 'Learn AngularJS', done: false}, {text: 'Build an Angular app', done: false} ];
-	localStorage.setItem('todos', JSON.stringify($scope.todos));
+var app = angular.module("todo-app", []);
 
-	$scope.addTodo = function() {
-		$scope.todos.push({
-			text: $scope.todoText,
-			done: false
-		});
-		$scope.todoText = ''; //clear the input after adding
-		localStorage.setItem('todos', JSON.stringify($scope.todos));
-	};
+app.controller('ToDoController', ['$scope', '$http', function($scope, $http) {
+  var backendUrl = 'http://localhost:8080';
+  
+  $scope.title = 'Cloud-ready To Do application';
+  $scope.headline = 'Reading data from ' + backendUrl;
 
-	$scope.remaining = function() {
-		var count = 0;
-		angular.forEach($scope.todos, function(todo){
-			count+= todo.done ? 0 : 1;
-		});
-		return count;
-	};
+  $http.get(backendUrl + '/api/todo').then(function(response){
+     $scope.todos = response.data;
+  });
 
-	$scope.archive = function() {
-		var oldTodos = $scope.todos;
-		$scope.todos = [];
-		angular.forEach(oldTodos, function(todo){
-			if (!todo.done)
-				$scope.todos.push(todo);
-		});
-		localStorage.setItem('todos', JSON.stringify($scope.todos));
+$scope.addToDo = function() {
+	var toDo = {
+		'text': $scope.toDoText,
+		'done': false
 	};
+	$http.post(backendUrl + '/api/todo', toDo)
+};
+
+$scope.getRemainingItems = function() {
+	var count = 0;
+	angular.forEach($scope.todos, function(todo){
+		count += todo.done ? 0 : 1;
+	});
+	return count;
 }
+
+$scope.stateChanged = function(todo) {
+	$http.put(backendUrl + '/api/todo', todo);
+}
+
+}]);
